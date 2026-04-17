@@ -7,8 +7,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     const stats: Stats = body.stats;
 
-    if (!stats) {
-      return NextResponse.json({ error: 'Stats missing' }, { status: 400 });
+    if (!stats || typeof stats.critical !== 'number' || typeof stats.high !== 'number' || typeof stats.medium !== 'number' || typeof stats.low !== 'number' || typeof stats.healthy !== 'number') {
+      return NextResponse.json({ error: 'Stats missing or invalid' }, { status: 400 });
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      );
     }
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -25,8 +32,14 @@ export async function POST(request: Request) {
       ]
     });
 
-    // @ts-ignore
-    const report = response.content[0].text;
+    const firstBlock = response.content[0];
+    if (!firstBlock || firstBlock.type !== 'text') {
+      return NextResponse.json(
+        { error: 'Unexpected model response format' },
+        { status: 502 }
+      );
+    }
+    const report = firstBlock.text;
 
     return NextResponse.json({ report });
   } catch (error: any) {

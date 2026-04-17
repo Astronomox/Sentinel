@@ -7,8 +7,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     const threat: Threat | HealthyEntry = body.threat;
 
-    if (!threat) {
-      return NextResponse.json({ error: 'Threat data missing' }, { status: 400 });
+    if (!threat || !threat.name || !threat.sev || !threat.sources || !threat.timestamp) {
+      return NextResponse.json({ error: 'Threat data missing required fields (name, sev, sources, timestamp)' }, { status: 400 });
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      );
     }
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -34,8 +41,14 @@ export async function POST(request: Request) {
       ]
     });
 
-    // @ts-ignore
-    const analysis = response.content[0].text;
+    const firstBlock = response.content[0];
+    if (!firstBlock || firstBlock.type !== 'text') {
+      return NextResponse.json(
+        { error: 'Unexpected model response format' },
+        { status: 502 }
+      );
+    }
+    const analysis = firstBlock.text;
 
     return NextResponse.json({ analysis });
   } catch (error: any) {

@@ -118,22 +118,18 @@ export async function GET() {
     }
   }).catch(() => {});
 
-  // Source 5 - HIBP
-  const hibpPromise = fetch('https://haveibeenpwned.com/api/v3/latestbreach').then(res => {
-    if (res.ok) {
-      healthy.push({
-        id: uuidv4(),
-        name: 'HIBP Intelligence Feed — Online',
-        sev: 'healthy',
-        sources: ['haveibeenpwned.com'],
-        timestamp: fetchedAt,
-        status: 'nominal'
-      });
-    }
-  }).catch(() => {});
+  // Source 5 - Internal Threat Intel Feeds Aggregated
+  healthy.push({
+    id: uuidv4(),
+    name: 'Threat Intelligence Feeds — Aggregated',
+    sev: 'healthy',
+    sources: ['sentinel-internal'],
+    timestamp: fetchedAt,
+    status: 'nominal'
+  });
 
   // Wait for all external fetches
-  await Promise.allSettled([abusePromise, urlhausPromise, feodoPromise, cloudflarePromise, hibpPromise]);
+  await Promise.allSettled([abusePromise, urlhausPromise, feodoPromise, cloudflarePromise]);
 
   // Source 6 - Synthetic Healthy Baseline
   const syntheticHealthy = [

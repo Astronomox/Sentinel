@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid'
 interface SentinelContextProps {
   state: AppState
   setThreats: (threats: Threat[]) => void
+  addThreat: (threat: Threat) => void
   setHealthy: (healthy: HealthyEntry[]) => void
   addAlert: (alert: Alert) => void
   setStats: (stats: Stats) => void
@@ -18,6 +19,8 @@ interface SentinelContextProps {
   setFilter: (filter: Severity | 'all') => void
   setSources: (sources: SourceStatus[]) => void
   setLastFetch: (time: string | null) => void
+  dataset: Pick<Threat, 'name' | 'sev' | 'sources'>[]
+  setDataset: (dataset: Pick<Threat, 'name' | 'sev' | 'sources'>[]) => void
 }
 
 const defaultStats: Stats = {
@@ -45,10 +48,23 @@ const defaultState: AppState = {
 
 const SentinelContext = createContext<SentinelContextProps | undefined>(undefined)
 
+import { mockThreats } from './threats'
+
 export const SentinelProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AppState>(defaultState)
+  const [dataset, setDataset] = useState<Pick<Threat, 'name' | 'sev' | 'sources'>[]>(mockThreats)
 
   const setThreats = useCallback((threats: Threat[]) => setState((prev) => ({ ...prev, threats })), [])
+  const addThreat = useCallback((threat: Threat) => setState((prev) => {
+    const updatedThreats = [threat, ...prev.threats].slice(0, 20)
+    const newStats = { ...prev.stats }
+    if (threat.sev !== 'healthy') {
+        newStats[threat.sev as keyof Omit<Stats, 'healthy'|'total'>] += 1
+    }
+    newStats.total += 1
+    return { ...prev, threats: updatedThreats, stats: newStats }
+  }), [])
+
   const setHealthy = useCallback((healthy: HealthyEntry[]) => setState((prev) => ({ ...prev, healthy })), [])
 
   const addAlert = useCallback((alert: Alert) => setState((prev) => ({ ...prev, alerts: [alert, ...prev.alerts] })), [])
@@ -80,9 +96,9 @@ export const SentinelProvider = ({ children }: { children: ReactNode }) => {
     SentinelContext.Provider,
     {
       value: {
-        state, setThreats, setHealthy, addAlert, setStats,
+        state, setThreats, addThreat, setHealthy, addAlert, setStats,
         setSelectedThreat, setAnalysis, setAnalysisLoading, showToast, removeToast,
-        setFilter, setSources, setLastFetch
+        setFilter, setSources, setLastFetch, dataset, setDataset
       }
     },
     children
