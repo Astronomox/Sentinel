@@ -33,9 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${orbitron.variable} ${rajdhani.variable} ${shareTechMono.variable}`}>
       <body className="font-sans">
-        <SentinelProvider>
-          {children}
-        </SentinelProvider>
+        {children}
       </body>
     </html>
   );

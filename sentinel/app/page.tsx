@@ -16,7 +16,9 @@ import Toast from '../components/Toast';
 import { useSentinel } from '../lib/store';
 import { generateRandomThreat } from '../lib/threats';
 
-export default function Home() {
+import { SentinelProvider } from '../lib/store';
+
+function Dashboard() {
   const { dataset, setThreats, addThreat, setStats } = useSentinel();
   const initDone = useRef(false);
 
@@ -98,5 +100,13 @@ export default function Home() {
       <ReportModal />
       <Toast />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <SentinelProvider>
+      <Dashboard />
+    </SentinelProvider>
   );
 }
